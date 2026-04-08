@@ -1,7 +1,7 @@
 from telegram.ext import Application,CommandHandler,ConversationHandler,MessageHandler,filters,CallbackQueryHandler
 from decouple import config
 
-from handler.command import start,language
+from handler.command import start,language,user_result
 from handler.message import get_username,get_password,confirm_data
 
 from utils import Lstate
@@ -27,6 +27,7 @@ def main() -> None:
         fallbacks=[]
     )
 
+    app.add_handler(CommandHandler('natijalar',user_result))
     app.add_handler(conv_handler)
 
     app.run_polling()
