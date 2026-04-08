@@ -1,6 +1,5 @@
 import requests
 from decouple import config
-from pprint import pprint
 
 LOGIN_URL = config("BASE_URL") + "api/User/Login"
 
