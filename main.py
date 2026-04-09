@@ -2,7 +2,7 @@ from telegram.ext import Application,CommandHandler,ConversationHandler,MessageH
 from decouple import config
 
 from handler.command import start,language,user_result,test
-from handler.message import get_username,get_password,confirm_data,choice_number
+from handler.message import get_username,get_password,confirm_data,choice_number,random
 
 from utils import Lstate
 
@@ -13,7 +13,7 @@ def main() -> None:
     app.add_handler(CommandHandler('natijalar',user_result))
     app.add_handler(CommandHandler("test",test))
     app.add_handler(CallbackQueryHandler(choice_number,pattern=r"^choice_(r|p)$"))
-
+    app.add_handler(CallbackQueryHandler(random, pattern=r"^random_(20|50)$"))
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler(['uz','ru'],language)],
