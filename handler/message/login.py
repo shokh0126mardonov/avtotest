@@ -88,11 +88,10 @@ async def confirm_data(update:Update,context:ContextTypes.DEFAULT_TYPE):
             user_data =  check_user(context.user_data.get("username"),context.user_data.get("password"))
 
             if user_data.get("status_code"):
-
-                context.user_data.clear()
                 context.user_data['language'] = language
-                context.user_data['token'] = user_data.get('token')
                 context.user_data['user_id'] = user_data.get('user_id')
+                context.user_data['token'] = user_data.get('token')
+
 
                 await query.edit_message_text("tasdiqlandi")
                 return ConversationHandler.END
@@ -113,10 +112,9 @@ async def confirm_data(update:Update,context:ContextTypes.DEFAULT_TYPE):
 
             if user_data.get("status_code"):
 
-                context.user_data.clear()
                 context.user_data['language'] = language
-                context.user_data['token'] = user_data.get('token')
                 context.user_data['user_id'] = user_data.get('user_id')
+                context.user_data['token'] = user_data.get('token')
                 
                 await query.edit_message_text("подтвержденный")
                 return ConversationHandler.END

@@ -3,9 +3,9 @@ from telegram.ext import ContextTypes
 from service import chech_result
 
 async def user_result(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = context.user_data.get('user_id')
+    user_id = context.user_data.get('user_id',False)
     language = context.user_data.get("language",False) 
-    token = context.user_data.get("token",None)
+    token = context.user_data.get("token",False)
     user_id = context.user_data.get("user_id",None)
 
     

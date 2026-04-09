@@ -1,8 +1,8 @@
 from telegram.ext import Application,CommandHandler,ConversationHandler,MessageHandler,filters,CallbackQueryHandler
 from decouple import config
 
-from handler.command import start,language,user_result
-from handler.message import get_username,get_password,confirm_data
+from handler.command import start,language,user_result,test
+from handler.message import get_username,get_password,confirm_data,choice_number
 
 from utils import Lstate
 
@@ -10,6 +10,10 @@ def main() -> None:
 
     app = Application.builder().token(config("TOKEN")).build()
     app.add_handler(CommandHandler('start',start))
+    app.add_handler(CommandHandler('natijalar',user_result))
+    app.add_handler(CommandHandler("test",test))
+    app.add_handler(CallbackQueryHandler(choice_number,pattern=r"^choice_(r|p)$"))
+
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler(['uz','ru'],language)],
@@ -27,7 +31,6 @@ def main() -> None:
         fallbacks=[]
     )
 
-    app.add_handler(CommandHandler('natijalar',user_result))
     app.add_handler(conv_handler)
 
     app.run_polling()
