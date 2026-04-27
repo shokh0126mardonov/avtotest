@@ -11,7 +11,7 @@ async def user_result(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
   
     if user_id:
-        chech_result(token,user_id)
+        # chech_result(token,user_id)
         if language == 'uz':
             text = (
                 "📊 *Sizning natijalaringiz*\n\n"
