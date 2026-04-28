@@ -1,3 +1,4 @@
 
 
-data = dict()
+
+print(20 // 3)

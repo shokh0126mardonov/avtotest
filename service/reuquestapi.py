@@ -15,7 +15,7 @@ def escape_md(text: str) -> str:
     return re.sub(r'([_*[\]()~`>#+\-=|{}.!])', r'\\\1', str(text))
 
 
-async def get_questions(token: str, lang: str, page_size: int):
+async def get_questions(token: str, lang: str, page_size: int,pageNumber:int,random:bool):
     async with httpx.AsyncClient(timeout=10) as client:
         response = await client.get(
             url=GET_TEST,
@@ -23,7 +23,8 @@ async def get_questions(token: str, lang: str, page_size: int):
             params={
                 "language": lang,
                 "pageSize": page_size,
-                "isRandom": True,
+                "isRandom": random,
+                "pageNumber":pageNumber if pageNumber else None
             }
         )
 

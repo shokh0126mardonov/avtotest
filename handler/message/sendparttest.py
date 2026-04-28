@@ -1,9 +1,8 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-
 from service import get_questions,send_next_question
 
-async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def send_part(update: Update, context: ContextTypes.DEFAULT_TYPE):
     language = context.user_data.get('language')
     token = context.user_data.get('token')
     user_id = context.user_data.get('user_id')
@@ -11,12 +10,7 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
-    try:
-        page_size = int(query.data.split('_')[1])
-    except Exception:
-        page_size = 5
-
-    if not user_id:
+    if not user_id or not token:
         await query.edit_message_text(
             text=(
                 "⚠️ *Foydalanuvchi topilmadi*\n\n"
@@ -27,8 +21,27 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
+    # 🔹 YANGI FORMAT: part_test:{page}:{part}
     try:
-        data = await get_questions(token=token,lang=language,page_size=page_size,random=True)
+        _, page_number, part = query.data.split(":")
+        page_number = int(page_number)
+        page_size = int(part)
+    except (ValueError, IndexError):
+        await query.answer("Noto‘g‘ri data", show_alert=True)
+        return
+
+    # 🔹 state sync (agar kerak bo‘lsa)
+    context.user_data['page_size'] = page_size
+
+    try:
+        data = await get_questions(
+            token=token,
+            lang=language,
+            page_size=page_size,
+            pageNumber=page_number,
+            random=False
+        )
+
         items = data.get("items", [])
 
         if not items:
@@ -42,13 +55,16 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "chat_id": update.effective_chat.id,
             "current_poll_id": None,
             "correct_count": 0,
-            "total": len(items)  # keyin kamayadi
+            "total": len(items)
         }
 
-        if language == 'uz':
-            await query.edit_message_text("🚀 Test boshlandi")
-        elif language == 'ru':
-            await query.edit_message_text("🚀 Тест начался")
+        start_text = (
+            "🚀 Test boshlandi"
+            if language == "uz"
+            else "🚀 Тест начался"
+        )
+
+        await query.edit_message_text(start_text)
 
         await send_next_question(context)
 
