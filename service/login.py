@@ -1,21 +1,27 @@
 import requests
 from decouple import config
 
-LOGIN_URL = config("BASE_URL") + "api/User/Login"
+LOGIN_URL = config("LOGIN_URL") 
 
 
-def check_user(username: str, password: str):
+def check_user(username: str, password: str,chat_id:int):
     response = requests.post(
         LOGIN_URL,
         json={
-            "login": username,
-            "password": password
+            "username": username,
+            "password": password,
+            "telegram_id":chat_id
         }
-    )
-    result = response.json().get("result")
+    )   
 
+    result = response.json()
+    print(response.text)
+    if response.status_code == 200:
+        return {
+        "status_code" : 200,
+        "token":  result.get("access"),
+        "user_id":result.get("id")
+            }
     return {
-       "status_code" : response.status_code == 200,
-       "token":  result.get("accessToken"),
-       "user_id":result.get("user").get("id")
-        }
+        "status_code":403
+    }
