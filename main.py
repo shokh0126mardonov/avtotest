@@ -1,7 +1,7 @@
 from telegram.ext import Application,CommandHandler,ConversationHandler,MessageHandler,filters,CallbackQueryHandler,PollAnswerHandler
 from decouple import config
 
-from handler.command import start,language,user_result,test
+from handler.command import start,language,user_result,test,logout
 from handler.message import get_username,get_password,confirm_data,choice_number,random,part,send_part,part_nav
 from service import handle_poll_answer
 
@@ -13,6 +13,7 @@ def main() -> None:
     app.add_handler(CommandHandler('start',start))
     app.add_handler(CommandHandler('natijalar',user_result))
     app.add_handler(CommandHandler("test",test))
+    app.add_handler(CommandHandler('logout',logout))
     app.add_handler(CallbackQueryHandler(choice_number,pattern=r"^choice_(r|p)$"))
     app.add_handler(CallbackQueryHandler(random, pattern=r"^random_(20|50)$"))
     app.add_handler(CallbackQueryHandler(part, pattern=r"^part_(20|50)$"))

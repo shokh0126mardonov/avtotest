@@ -91,7 +91,7 @@ async def confirm_data(update:Update,context:ContextTypes.DEFAULT_TYPE):
                 context.user_data['language'] = language
                 context.user_data['user_id'] = user_data.get('user_id')
                 context.user_data['token'] = user_data.get('token')
-
+                context.user_data['refresh'] = user_data.get('refresh')
                 await query.edit_message_text("tasdiqlandi")
                 return ConversationHandler.END
             
@@ -114,6 +114,7 @@ async def confirm_data(update:Update,context:ContextTypes.DEFAULT_TYPE):
                 context.user_data['language'] = language
                 context.user_data['user_id'] = user_data.get('user_id')
                 context.user_data['token'] = user_data.get('token')
+                context.user_data['refresh'] = user_data.get('refresh')
 
 
                 await query.edit_message_text("подтвержденный")

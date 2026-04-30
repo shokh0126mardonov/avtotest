@@ -19,7 +19,8 @@ def check_user(username: str, password: str,chat_id:int):
         return {
         "status_code" : 200,
         "token":  result.get("access"),
-        "user_id":result.get("id")
+        "user_id":result.get("id"),
+        "refresh":result.get("refresh")
             }
     return {
         "status_code":403
