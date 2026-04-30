@@ -38,7 +38,7 @@ async def send_part(update: Update, context: ContextTypes.DEFAULT_TYPE):
             token=token,
             lang=language,
             page_size=page_size,
-            pageNumber=page_number,
+            page=page_number,
             random=False
         )
 
