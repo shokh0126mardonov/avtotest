@@ -4,9 +4,10 @@ import httpx
 import asyncio
 from urllib.parse import urljoin
 from decouple import config
+from pprint import pprint
+import random
 
-
-GET_TEST = config('BASE_URL') + "api/TestCase/GetAll"
+GET_TEST = config('GET_TEST')
 BASE_URL = config('BASE_URL')
 
 
@@ -15,41 +16,66 @@ def escape_md(text: str) -> str:
     return re.sub(r'([_*[\]()~`>#+\-=|{}.!])', r'\\\1', str(text))
 
 
-async def get_questions(token: str, lang: str, page_size: int,pageNumber:int,random:bool):
+# =========================
+# API CALL
+# =========================
+async def get_questions(
+    token: str,
+    lang: str,
+    page_size: int,
+    page: int | None = None,
+    random: bool = False
+):
     async with httpx.AsyncClient(timeout=10) as client:
+        params = {
+            "lang": lang,
+            "page_size": page_size,
+            "random": random,
+        }
+
+        if page is not None:
+            params["page"] = page
+
+        print("REQUEST PARAMS:", params)
+
         response = await client.get(
             url=GET_TEST,
             headers={"Authorization": f"Bearer {token}"},
-            params={
-                "language": lang,
-                "pageSize": page_size,
-                "isRandom": random,
-                "pageNumber":pageNumber if pageNumber else None
-            }
+            params=params
         )
 
         response.raise_for_status()
         data = response.json()
-        return data.get("result", {})
 
+        if isinstance(data, list):
+            return {"items": data}
 
+        return {"items": data.get("results", [])}
 
 def map_test_to_poll(item: dict) -> dict:
     question = item.get("question", "")[:300]
 
+    answers = item.get("answers", [])
+
+    if not answers:
+        raise ValueError("No answers")
+
+    # 🔥 SHUFFLE
+    random.shuffle(answers)
+
     options = []
     correct_index = None
 
-    for i, ans in enumerate(item.get("testAnswers", [])):
-        options.append(ans.get("answerText", "")[:100])
+    for i, ans in enumerate(answers):
+        options.append(ans.get("answer_text_uz", "")[:100])
 
-        if ans.get("isCorrect"):
+        if ans.get("is_correct"):
             correct_index = i
 
     if correct_index is None:
         raise ValueError("Correct answer not found")
 
-    media = item.get("mediaUrl")
+    media = item.get("media")
 
     if media and not media.startswith("http"):
         media = urljoin(BASE_URL, media)
@@ -63,10 +89,8 @@ def map_test_to_poll(item: dict) -> dict:
     }
 
 
-
 async def send_next_question(context: ContextTypes.DEFAULT_TYPE):
     quiz = context.user_data.get("quiz")
-    language = context.user_data.get('language')
 
     if not quiz:
         return
@@ -79,47 +103,26 @@ async def send_next_question(context: ContextTypes.DEFAULT_TYPE):
 
         try:
             poll_data = map_test_to_poll(item)
-            break  # valid savol topildi
-        except Exception as e:
-            print("⛔ SKIPPED:", e)
-
+            break
+        except Exception:
             quiz["total"] -= 1
-
             quiz["current_index"] += 1
 
     else:
-        # savollar tugadi
         correct = quiz["correct_count"]
         total = quiz["total"]
-        if language == 'uz':
-            text = (
-                f"📊 *Natija*\n\n"
-                f"✅ To‘g‘ri: *{escape_md(correct)}*\n"
-                f"❌ Noto‘g‘ri: *{escape_md(total - correct)}*\n"
-                f"📈 Umumiy: *{escape_md(total)}*\n"
-            )
-        else:
-            text = (
-                f"📊 *Результат*\n\n"
-                f"✅ Правильные: *{escape_md(correct)}*\n"
-                f"❌ Неправильные: *{escape_md(total - correct)}*\n"
-                f"📈 Всего: *{escape_md(total)}*\n"
-            )
-        
-        if not text or not text.strip():
-            text = "Natija mavjud emas"
 
-        await context.bot.send_message(
-            chat_id=chat_id,
-            text=text,
-            parse_mode="MarkdownV2"
-
+        text = (
+            f"📊 Natija\n\n"
+            f"✅ To‘g‘ri: {correct}\n"
+            f"❌ Noto‘g‘ri: {total - correct}\n"
+            f"📈 Umumiy: {total}"
         )
 
+        await context.bot.send_message(chat_id=chat_id, text=text)
         context.user_data.pop("quiz", None)
         return
 
-    # ===== shu joydan past = valid savol =====
     if poll_data["media"]:
         try:
             await context.bot.send_photo(chat_id, poll_data["media"])
@@ -139,7 +142,6 @@ async def send_next_question(context: ContextTypes.DEFAULT_TYPE):
 
     quiz["current_poll_id"] = message.poll.id
 
-    # eski task cancel
     task = quiz.get("task")
     if task and not task.done():
         task.cancel()
@@ -147,6 +149,9 @@ async def send_next_question(context: ContextTypes.DEFAULT_TYPE):
     quiz["task"] = asyncio.create_task(handle_timeout(context, 30))
 
 
+# =========================
+# TIMEOUT
+# =========================
 async def handle_timeout(context: ContextTypes.DEFAULT_TYPE, delay: int):
     try:
         await asyncio.sleep(delay)
@@ -162,11 +167,18 @@ async def handle_timeout(context: ContextTypes.DEFAULT_TYPE, delay: int):
         pass
 
 
-
+# =========================
+# ANSWER HANDLER
+# =========================
 async def handle_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     answer = update.poll_answer
+
+    if not answer.option_ids:
+        return
+
+    selected_option = answer.option_ids[0]
     poll_id = answer.poll_id
-    selected_option = answer.option_ids[0] 
+
     quiz = context.user_data.get("quiz")
     if not quiz:
         return
@@ -175,13 +187,29 @@ async def handle_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return
 
     index = quiz["current_index"]
-    item = quiz["questions"][index]
+    questions = quiz.get("questions", [])
+
+    if index >= len(questions):
+        return
+
+    item = questions[index]
+
+    answers = item.get("answers")
+    if not answers:
+        quiz["current_index"] += 1
+        await send_next_question(context)
+        return
 
     correct_index = None
-    for i, ans in enumerate(item["testAnswers"]):
-        if ans["isCorrect"]:
+    for i, ans in enumerate(answers):
+        if ans.get("is_correct"):
             correct_index = i
             break
+
+    if correct_index is None:
+        quiz["current_index"] += 1
+        await send_next_question(context)
+        return
 
     if selected_option == correct_index:
         quiz["correct_count"] += 1
@@ -192,4 +220,3 @@ async def handle_poll_answer(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     quiz["current_index"] += 1
     await send_next_question(context)
-

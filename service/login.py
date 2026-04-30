@@ -15,7 +15,6 @@ def check_user(username: str, password: str,chat_id:int):
     )   
 
     result = response.json()
-    print(response.text)
     if response.status_code == 200:
         return {
         "status_code" : 200,

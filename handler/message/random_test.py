@@ -13,6 +13,7 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         page_size = int(query.data.split('_')[1])
+        print(page_size)
     except Exception:
         page_size = 5
 
@@ -30,7 +31,7 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         data = await get_questions(token=token,lang=language,page_size=page_size,random=True)
         items = data.get("items", [])
-
+        
         if not items:
             await query.edit_message_text("❌ Savollar topilmadi")
             return
@@ -42,7 +43,7 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "chat_id": update.effective_chat.id,
             "current_poll_id": None,
             "correct_count": 0,
-            "total": len(items)  # keyin kamayadi
+            "total": len(items) 
         }
 
         if language == 'uz':
