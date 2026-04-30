@@ -7,8 +7,10 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
     language = context.user_data.get('language')
     token = context.user_data.get('token')
     user_id = context.user_data.get('user_id')
+    refresh = context.user_data.get('refresh')
 
     query = update.callback_query
+
     await query.answer()
 
     try:
@@ -29,7 +31,13 @@ async def random(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-        data = await get_questions(token=token,lang=language,page_size=page_size,random=True)
+        data = await get_questions(token=token,lang=language,page_size=page_size,random=True,refresh = refresh)
+
+        if data.get('status') == "login":
+            await update.callback_query.message.reply_text(
+                "qaytadan login qiling!"
+            )
+            return
         items = data.get("items", [])
         
         if not items:

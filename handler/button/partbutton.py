@@ -1,18 +1,16 @@
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 import math
-import requests
 from decouple import config
 
 GET_TEST = config('GET_TEST')
 
 
-def part_button(part: int, token: str, page: int = 1):
-    request = requests.get(
-        url=GET_TEST,
-        headers={"Authorization": f"Bearer {token}"}
-    )
-
-    count = request.json().get('count')
+def part_button(
+        part: int, 
+        count:int,
+        page: int = 1
+        ):
+ 
 
     total_pages = math.ceil(count / part)
 

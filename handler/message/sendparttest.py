@@ -6,6 +6,7 @@ async def send_part(update: Update, context: ContextTypes.DEFAULT_TYPE):
     language = context.user_data.get('language')
     token = context.user_data.get('token')
     user_id = context.user_data.get('user_id')
+    refresh = context.user_data.get('refresh')
 
     query = update.callback_query
     await query.answer()
@@ -39,8 +40,15 @@ async def send_part(update: Update, context: ContextTypes.DEFAULT_TYPE):
             lang=language,
             page_size=page_size,
             page=page_number,
-            random=False
+            random=False,
+            refresh=refresh
         )
+        
+        if data.get('status') == "login":
+            await update.callback_query.message.reply_text(
+                "qaytadan login qiling!"
+            )
+            return
 
         items = data.get("items", [])
 

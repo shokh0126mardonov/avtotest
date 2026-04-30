@@ -4,8 +4,8 @@ import httpx
 import asyncio
 from urllib.parse import urljoin
 from decouple import config
-from pprint import pprint
 import random
+from .check_token import check_status_by_token
 
 GET_TEST = config('GET_TEST')
 BASE_URL = config('BASE_URL')
@@ -24,9 +24,11 @@ async def get_questions(
     lang: str,
     page_size: int,
     page: int | None = None,
-    random: bool = False
+    random: bool = False,
+    refresh: str | None = None
 ):
     async with httpx.AsyncClient(timeout=10) as client:
+
         params = {
             "lang": lang,
             "page_size": page_size,
@@ -38,19 +40,45 @@ async def get_questions(
 
         print("REQUEST PARAMS:", params)
 
+        # 🔹 1. birinchi request
         response = await client.get(
             url=GET_TEST,
             headers={"Authorization": f"Bearer {token}"},
             params=params
         )
 
+        # 🔹 2. agar token expired bo‘lsa
+        if response.status_code == 401:
+
+            if not refresh:
+                return {"status": "login"}
+
+            check = await check_status_by_token(refresh)
+
+            if check["status_code"] == 200:
+                token = check["access"]
+
+                # 🔁 retry (client hali ochiq!)
+                response = await client.get(
+                    url=GET_TEST,
+                    headers={"Authorization": f"Bearer {token}"},
+                    params=params
+                )
+            else:
+                return {"status": "login"}
+
+        # 🔹 3. boshqa xatolar
         response.raise_for_status()
+
         data = response.json()
 
+        # 🔹 4. normalize
         if isinstance(data, list):
             return {"items": data}
 
         return {"items": data.get("results", [])}
+
+
 
 def map_test_to_poll(item: dict) -> dict:
     question = item.get("question", "")[:300]

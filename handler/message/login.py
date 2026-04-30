@@ -88,10 +88,12 @@ async def confirm_data(update:Update,context:ContextTypes.DEFAULT_TYPE):
             user_data =  check_user(context.user_data.get("username"),context.user_data.get("password"),chat_id = update.effective_chat.id)
 
             if user_data.get("status_code")==200:
+
                 context.user_data['language'] = language
                 context.user_data['user_id'] = user_data.get('user_id')
                 context.user_data['token'] = user_data.get('token')
                 context.user_data['refresh'] = user_data.get('refresh')
+                
                 await query.edit_message_text("tasdiqlandi")
                 return ConversationHandler.END
             
